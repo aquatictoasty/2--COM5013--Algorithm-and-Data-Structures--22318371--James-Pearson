@@ -65,3 +65,45 @@ class Queue:
 
     def size(self):
         return self._size
+
+# 2. Hash Table (for Primary Storage by ISBN) - Implemented with Separate Chaining
+class HashTable:
+    """A hash table using separate chaining for collision resolution."""
+    def __init__(self, size=100):
+        self.size = size
+        self.table = [[] for _ in range(self.size)]
+
+    def _hash(self, key):
+        """A simple hash function to map a key to an index."""
+        # A simple modulo hash for string ISBNs
+        return hash(key) % self.size
+
+    def insert(self, key, value):
+        """Inserts a key-value pair into the hash table. O(1) average."""
+        index = self._hash(key)
+        bucket = self.table[index]
+        # Check if key already exists, if so, update it
+        for i, (k, v) in enumerate(bucket):
+            if k == key:
+                bucket[i] = (key, value)
+                return
+        # Otherwise, append the new key-value pair
+        bucket.append((key, value))
+
+    def get(self, key):
+        """Retrieves a value by its key. O(1) average."""
+        index = self._hash(key)
+        bucket = self.table[index]
+        for k, v in bucket:
+            if k == key:
+                return v
+        return None # Key not found
+
+    def delete(self, key):
+        """Deletes a key-value pair. O(1) average."""
+        index = self._hash(key)
+        bucket = self.table[index]
+        for i, (k, v) in enumerate(bucket):
+            if k == key:
+                del bucket[i]
+                return
