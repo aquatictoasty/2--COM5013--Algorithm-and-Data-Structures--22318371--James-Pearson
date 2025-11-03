@@ -164,3 +164,87 @@ class BinarySearchTree:
             self._in_order_recursive(current_node.left, books)
             books.append(current_node.book)
             self._in_order_recursive(current_node.right, books)
+
+
+# Main Application Class
+class Library:
+    """The main library system controller."""
+    def __init__(self):
+        # The two primary data structures for storing book data
+        self.books_by_isbn = HashTable()
+        self.books_by_title = BinarySearchTree()
+        print("Library system initialized.")
+
+    def add_book(self, isbn, title, author):
+        """Adds a new book to the library."""
+        if self.books_by_isbn.get(isbn):
+            print(f"Error: Book with ISBN {isbn} already exists.")
+            return
+        
+        new_book = Book(isbn, title, author)
+        self.books_by_isbn.insert(isbn, new_book)
+        self.books_by_title.insert(new_book)
+        print(f"Added: {new_book.title}")
+
+    def checkout_book(self, isbn, user_id):
+        """Checks out a book to a user."""
+        book = self.books_by_isbn.get(isbn)
+        if not book:
+            print("Error: Book not found.")
+            return
+
+        if book.is_checked_out:
+            print(f"'{book.title}' is currently checked out. Adding user '{user_id}' to waitlist.")
+            book.waitlist.enqueue(user_id)
+        else:
+            book.is_checked_out = True
+            print(f"'{book.title}' checked out to user '{user_id}'.")
+
+    def return_book(self, isbn):
+        """Returns a book to the library."""
+        book = self.books_by_isbn.get(isbn)
+        if not book:
+            print("Error: Book not found.")
+            return
+
+        if not book.is_checked_out:
+            print(f"Error: '{book.title}' is not currently checked out.")
+            return
+
+        book.is_checked_out = False
+        print(f"'{book.title}' has been returned.")
+
+        if not book.waitlist.is_empty():
+            next_user = book.waitlist.dequeue()
+            print(f"Notifying next user on waitlist: '{next_user}'.")
+            # In a hyperthetical real system, this would trigger an email or notification
+            self.checkout_book(isbn, next_user)
+
+    def find_book_by_isbn(self, isbn):
+        """Finds and displays book details using ISBN."""
+        book = self.books_by_isbn.get(isbn)
+        if book:
+            print("Found book by ISBN:")
+            print(f"  {book}")
+        else:
+            print(f"No book found with ISBN {isbn}.")
+
+    def find_book_by_title(self, title):
+        """Finds and displays book details using title."""
+        book = self.books_by_title.search(title)
+        if book:
+            print("Found book by Title:")
+            print(f"  {book}")
+        else:
+            print(f"No book found with title '{title}'.")
+
+    def list_all_books(self):
+        """Lists all books in the library, sorted alphabetically by title."""
+        print("\n--- Library Catalogue (Alphabetical by Title) ---")
+        sorted_books = self.books_by_title.in_order_traversal()
+        if not sorted_books:
+            print("The library has no books.")
+            return
+        for book in sorted_books:
+            print(book)
+        print("-------------------------------------------------")
