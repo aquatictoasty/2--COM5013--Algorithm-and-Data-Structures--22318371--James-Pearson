@@ -248,3 +248,56 @@ class Library:
         for book in sorted_books:
             print(book)
         print("-------------------------------------------------")
+
+# Testing and Demonstration 
+if __name__ == "__main__":
+    
+    # 1. Initialise the library
+    my_library = Library()
+    
+    # 2. Test handling of an empty data structure
+    print("\n--- Test: Operations on Empty Library ---")
+    my_library.list_all_books()
+    my_library.find_book_by_isbn("000-0-00-000000-0")
+    
+    # 3. Add books to the library
+    print("\n--- Test: Adding Books ---")
+    my_library.add_book("978-0-262-03384-8", "Introduction to Algorithms", "Thomas H. Cormen")
+    my_library.add_book("978-0-321-76572-3", "The C++ Programming Language", "Bjarne Stroustrup")
+    my_library.add_book("978-0-13-235088-4", "Clean Code", "Robert C. Martin")
+    my_library.add_book("978-1-491-90424-4", "You Don't Know JS: Up & Going", "Kyle Simpson")
+    my_library.add_book("978-0-13-468599-1", "Effective Java", "Joshua Bloch")
+
+    # Display the full catalogue
+    my_library.list_all_books()
+    
+    # 4. Test feature: Searching for books
+    print("\n--- Test: Searching ---")
+    my_library.find_book_by_isbn("978-0-13-235088-4") 
+    my_library.find_book_by_isbn("000-0-00-000000-0") # Non-existent
+    
+    my_library.find_book_by_title("Clean Code")
+    my_library.find_book_by_title("Non-Existent Book") # Non-existent
+    
+    # 5. Test feature: Checking out a book
+    print("\n--- Test: Checkout Process ---")
+    my_library.checkout_book("978-0-13-235088-4", "user_alice")
+    my_library.find_book_by_isbn("978-0-13-235088-4") # Check status has changed
+    
+    # 6. Test feature: Waitlisting
+    print("\n--- Test: Waitlist ---")
+    my_library.checkout_book("978-0-13-235088-4", "user_bob") 
+    my_library.checkout_book("978-0-13-235088-4", "user_charlie")
+    
+    # 7. Test feature: Returning a book and processing the waitlist
+    print("\n--- Test: Returning a Book ---")
+    my_library.return_book("978-0-13-235088-4")
+    
+    my_library.find_book_by_isbn("978-0-13-235088-4")
+    
+    print("\n--- Test: Returning Again ---")
+    my_library.return_book("978-0-13-235088-4")
+    my_library.find_book_by_isbn("978-0-13-235088-4")
+
+    # 8. Final state of the library
+    my_library.list_all_books()
