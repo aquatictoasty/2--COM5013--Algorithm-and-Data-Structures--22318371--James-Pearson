@@ -5,10 +5,16 @@
 # Student Number: 22318371
 #
 
+import time
+import sys
+
 # Core Data Class
 class Book:
     """Represents a single book in the library."""
     def __init__(self, isbn, title, author):
+        # Validation to handle "zero or null values" test case
+        if not all([isbn is not None, title, author]):
+             raise ValueError("Book ISBN, title, and author cannot be None or empty.")
         self.isbn = isbn
         self.title = title
         self.author = author
@@ -75,19 +81,16 @@ class HashTable:
 
     def _hash(self, key):
         """A simple hash function to map a key to an index."""
-        # A simple modulo hash for string ISBNs
         return hash(key) % self.size
 
     def insert(self, key, value):
         """Inserts a key-value pair into the hash table. O(1) average."""
         index = self._hash(key)
         bucket = self.table[index]
-        # Check if key already exists, if so, update it
         for i, (k, v) in enumerate(bucket):
             if k == key:
                 bucket[i] = (key, value)
                 return
-        # Otherwise, append the new key-value pair
         bucket.append((key, value))
 
     def get(self, key):
@@ -122,69 +125,101 @@ class BinarySearchTree:
         self.root = None
 
     def insert(self, book):
-        """Inserts a book into the BST, ordered by title. O(log n) average."""
+        """
+        Inserts a book using an ITERATIVE approach to prevent RecursionError
+        on large, unbalanced datasets.
+        """
+        new_node = BSTNode(book)
         if self.root is None:
-            self.root = BSTNode(book)
-        else:
-            self._insert_recursive(self.root, book)
+            self.root = new_node
+            return
 
-    def _insert_recursive(self, current_node, book):
-        if book.title < current_node.book.title:
-            if current_node.left is None:
-                current_node.left = BSTNode(book)
+        current = self.root
+        while True:
+            if book.title < current.book.title:
+                if current.left is None:
+                    current.left = new_node
+                    return
+                current = current.left
             else:
-                self._insert_recursive(current_node.left, book)
-        else:
-            if current_node.right is None:
-                current_node.right = BSTNode(book)
-            else:
-                self._insert_recursive(current_node.right, book)
+                if current.right is None:
+                    current.right = new_node
+                    return
+                current = current.right
 
     def search(self, title):
-        """Searches for a book by title. O(log n) average."""
-        return self._search_recursive(self.root, title)
-
-    def _search_recursive(self, current_node, title):
-        if current_node is None or current_node.book.title == title:
-            return current_node.book if current_node else None
-        
-        if title < current_node.book.title:
-            return self._search_recursive(current_node.left, title)
-        else:
-            return self._search_recursive(current_node.right, title)
+        """
+        Searches for a book by title ITERATIVELY to prevent RecursionError.
+        O(log n) average, but O(n) in worst-case (unbalanced) tree.
+        """
+        current = self.root
+        while current is not None:
+            if title == current.book.title:
+                return current.book
+            elif title < current.book.title:
+                current = current.left
+            else:
+                current = current.right
+        return None
 
     def in_order_traversal(self):
-        """Performs an in-order traversal to get all books sorted by title."""
+        """
+        Performs an ITERATIVE in-order traversal (using a stack) to
+        prevent RecursionError on deep, unbalanced trees.
+        """
         books = []
-        self._in_order_recursive(self.root, books)
+        stack = []
+        current = self.root
+        
+        while current or stack:
+            # Reach the left-most node of the current node
+            while current:
+                stack.append(current)
+                current = current.left
+            
+            # Current must be None at this point
+            current = stack.pop()
+            books.append(current.book)
+            
+            # Already visited the node and its left subtree, now visit right subtree
+            current = current.right
+            
         return books
-
-    def _in_order_recursive(self, current_node, books):
-        if current_node:
-            self._in_order_recursive(current_node.left, books)
-            books.append(current_node.book)
-            self._in_order_recursive(current_node.right, books)
 
 
 # Main Application Class
 class Library:
     """The main library system controller."""
-    def __init__(self):
-        # The two primary data structures for storing book data
-        self.books_by_isbn = HashTable()
+    def __init__(self, hash_table_size=1000):
+        # Allow hash table size to be configured for scalability testing
+        self.books_by_isbn = HashTable(hash_table_size)
         self.books_by_title = BinarySearchTree()
-        print("Library system initialized.")
+        print(f"Library system initialized (Hash Table size: {hash_table_size}).")
 
-    def add_book(self, isbn, title, author):
-        """Adds a new book to the library."""
-        if self.books_by_isbn.get(isbn):
-            print(f"Error: Book with ISBN {isbn} already exists.")
-            return
-        
-        new_book = Book(isbn, title, author)
-        self.books_by_isbn.insert(isbn, new_book)
-        self.books_by_title.insert(new_book)
-        print(f"Added: {new_book.title}")
+    def add_book(self, isbn, title, author, verbose=True):
+        """
+        Adds a new book to the library.
+        Includes a 'verbose' flag to suppress output during stress testing.
+        """
+        try:
+            # Validation is now handled in the Book class
+            new_book = Book(isbn, title, author)
+            
+            if self.books_by_isbn.get(isbn):
+                if verbose:
+                    print(f"Error: Book with ISBN {isbn} already exists.")
+                return False
+            
+            self.books_by_isbn.insert(isbn, new_book)
+            self.books_by_title.insert(new_book)
+            if verbose:
+                print(f"Added: {new_book.title}")
+            return True
+        except ValueError as e:
+            if verbose:
+                print(f"Error adding book: {e}")
+            return False
+
 
     def checkout_book(self, isbn, user_id):
         """Checks out a book to a user."""
@@ -217,7 +252,6 @@ class Library:
         if not book.waitlist.is_empty():
             next_user = book.waitlist.dequeue()
             print(f"Notifying next user on waitlist: '{next_user}'.")
-            # In a hyperthetical real system, this would trigger an email or notification
             self.checkout_book(isbn, next_user)
 
     def find_book_by_isbn(self, isbn):
@@ -228,6 +262,7 @@ class Library:
             print(f"  {book}")
         else:
             print(f"No book found with ISBN {isbn}.")
+        return book
 
     def find_book_by_title(self, title):
         """Finds and displays book details using title."""
@@ -237,6 +272,7 @@ class Library:
             print(f"  {book}")
         else:
             print(f"No book found with title '{title}'.")
+        return book
 
     def list_all_books(self):
         """Lists all books in the library, sorted alphabetically by title."""
@@ -249,9 +285,14 @@ class Library:
             print(book)
         print("-------------------------------------------------")
 
-# Testing and Demonstration 
+
+# Testing and Demonstration
 if __name__ == "__main__":
     
+    print("\n" + "="*50)
+    print("     Testing and Demonstration")
+    print("="*50)
+
     # 1. Initialise the library
     my_library = Library()
     
@@ -301,12 +342,13 @@ if __name__ == "__main__":
 
     # 8. Final state of the library
     my_library.list_all_books()
+    
+    
+    
+    # Stress and Edge Case Testing
 
-# 
-    # STRESS & EDGE CASE TESTING 
-   
     print("\n\n" + "="*60)
-    print("STRESS & EDGE CASE TESTING")
+    print(" Stress and Edge Case Testing")
     print("="*60)
 
     # Test Case: Zero or Null Values 
@@ -322,7 +364,7 @@ if __name__ == "__main__":
     my_library.add_book(isbn="456-789", title="", author="Some Author")
     
 
-    # Test Case: Large Data Type (over 64 bits)
+    # Test Case: Large Data Type (over 64 bits) 
     print("\n--- 2. Test: Handling Large Data Types (> 64-bit) ---")
     large_isbn = 9780134685991123456789012345678901234567890
     print(f"Attempting to add a book with a very large ISBN: {large_isbn}")
@@ -332,7 +374,7 @@ if __name__ == "__main__":
     print(" > Test PASSED: Python's arbitrary-precision integers are handled correctly by hash().")
 
 
-    # Test Case: Scalability and Performance 
+    # Test Case: Scalability and Performance (Adding 10000 books Simulation)
     print("\n--- 3. Test: Scalability & Performance (Simulating 10K Books) ---")
     
     num_books_to_add = 10000
@@ -344,7 +386,7 @@ if __name__ == "__main__":
     
     start_time_insert = time.time()
     for i in range(num_books_to_add):
-        # added in sorted order to deliberately create a worst-case scenario for the BST
+        # add in sorted order to deliberately create a worst-case scenario for the BST
         isbn = f"ISBN-{i:05d}"
         title = f"Book Title {i:05d}"
         # Add book with verbose=False to prevent 10,000 print statements
@@ -357,7 +399,7 @@ if __name__ == "__main__":
     end_time_insert = time.time()
     print(f"\n Time to insert {num_books_to_add} books: {end_time_insert - start_time_insert:.4f} seconds")
     
-    # --- Performance Measurement ---
+    # Performance Measurement
     print("\n--- Performance Test: Searching ---")
     
     # A. Test Hash Table Search (O(1) average)
