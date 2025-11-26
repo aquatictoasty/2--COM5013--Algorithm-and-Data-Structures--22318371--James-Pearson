@@ -1,5 +1,5 @@
 #
-# COM5013 Algorithms & Data Structures
+# Module: COM5013 Algorithms & Data Structures
 # Assignment: University Library Management System
 # Name: James Pearson
 # Student Number: 22318371
@@ -29,36 +29,8 @@ class Book:
         status = "Checked Out" if self.is_checked_out else "Available"
         return f'"{self.title}" by {self.author} (ISBN: {self.isbn}) - Status: {status}'
 
-# Data Structure 1: Hash Table
-class HashTable:
-    """A hash table using separate chaining."""
-    def __init__(self, size=1000):
-        self.size = size
-        self.table = [[] for _ in range(self.size)]
 
-    def _hash(self, key):
-        """A simple hash function."""
-        return hash(key) % self.size
-
-    def insert(self, key, value):
-        """Inserts a key-value pair. O(1) average."""
-        index = self._hash(key)
-        bucket = self.table[index]
-        for i, (k, v) in enumerate(bucket):
-            if k == key:
-                bucket[i] = (key, value)
-                return
-        bucket.append((key, value))
-
-    def get(self, key):
-        """Retrieves a value by its key. O(1) average."""
-        index = self._hash(key)
-        for k, v in self.table[index]:
-            if k == key:
-                return v
-        return None
-
-# Data Structure 2: BST now iterative
+# Data Structure 2: BST (iterative)
 class BSTNode:
     """A node for the Binary Search Tree."""
     def __init__(self, book):
@@ -127,21 +99,23 @@ class BinarySearchTree:
 class Library:
     """The main library system controller."""
     def __init__(self, size=10000):
-        # uses a large hash table
-        self.books_by_isbn = HashTable(size)
+        # use Python's built-in dict for ISBN lookup (O(1) average)
+        # `size` parameter accepted for compatibility with existing tests but is unused.
+        self.books_by_isbn = {}
         self.books_by_title = BinarySearchTree()
-        print(f"Library system initialised (Hash Table Size: {size}).")
+        print(f"Library system initialised (using built-in dict for ISBN lookup).")
 
     def add_book(self, isbn, title, author, verbose=True):
         """Adds a new book. Verbose flag for silent operation."""
         try:
             # check for existence first which is done silently for speed
-            if self.books_by_isbn.get(isbn):
+            if isbn in self.books_by_isbn:
                 if verbose: print(f"Error: Book with ISBN {isbn} already exists.")
                 return False
             
             new_book = Book(isbn, title, author)
-            self.books_by_isbn.insert(isbn, new_book)
+            # store in built-in dict
+            self.books_by_isbn[isbn] = new_book
             self.books_by_title.insert(new_book)
             
             if verbose: print(f"Added: \"{title}\"")
@@ -186,7 +160,7 @@ class Library:
             print(f"Notifying next user: '{next_user}'.")
             self.checkout_book(isbn, next_user)
             
-    # Methods from the original test code
+    # Methods from the 'original'' test code
     
     def find_book_by_isbn(self, isbn, verbose=True):
         """Finds and displays book details using ISBN."""
@@ -222,7 +196,7 @@ class Library:
         print("-------------------------------------------------")
 
 
-# FULL TESTING  
+# FULL TESTING CODE # 
 
 def run_assignment_edge_case_tests():
     """
@@ -284,15 +258,15 @@ def run_functional_tests():
     # 4. Test feature: Searching for books
     print("\n--- Test: Searching ---")
     my_library.find_book_by_isbn("978-0-13-235088-4") 
-    my_library.find_book_by_isbn("000-0-00-000000-0") # Non-existent
+    my_library.find_book_by_isbn("000-0-00-000000-0") # non existent
     
     my_library.find_book_by_title("Clean Code")
-    my_library.find_book_by_title("Non-Existent Book") # Non-existent
+    my_library.find_book_by_title("Non-Existent Book") # non existent
     
     # 5. Test feature: Checking out a book
     print("\n--- Test: Checkout Process ---")
     my_library.checkout_book("978-0-13-235088-4", "user_alice")
-    my_library.find_book_by_isbn("978-0-13-235088-4") # Check status has changed
+    my_library.find_book_by_isbn("978-0-13-235088-4") # check status has changed
     
     # 6. Test feature: Waitlisting
     print("\n--- Test: Waitlist ---")
@@ -323,7 +297,7 @@ def run_scalability_test():
     
     num_books = 1000000
     
-    # Initialise a new library with a large hash table (1.25x load factor)
+    # Initialise a new library (size parameter kept for compatibility)
     large_library = Library(size=int(num_books * 1.25))
     
     print(f"--- 1. Testing scalability with {num_books} books ---")
@@ -335,6 +309,7 @@ def run_scalability_test():
         # integer ISBN
         isbn = i
         # random Title (prevents BST from becoming unbalanced)
+        ## IMPORTANT - PURELY FOR TESTING WOULD NOT BE IN HYPERTHETICAL PRODUCTION CODE ##
         title = f"Book Title {random.randint(0, num_books * 10)}"
         
         # Add book with verbose=False (No prints)
@@ -359,12 +334,12 @@ def run_scalability_test():
     print("--- 2. Performance Test: Searching ---")
     print(f"   (Searching for ISBN {isbn_to_find} and Title '{title_to_find}')\n")
 
-    print("Searching for a book by ISBN (Hash Table)...")
+    print("Searching for a book by ISBN (dict)...")
     start_time = time.time()
     result = large_library.find_book_by_isbn(isbn_to_find, verbose=False)
     end_time = time.time()
     print(f"Result found: \"{result.title}\"")
-    print(f" Hash Table search time: {(end_time - start_time) * 1e6:.2f} microseconds. (O(1) speed)")
+    print(f" dict search time: {(end_time - start_time) * 1e6:.2f} microseconds. (O(1) speed)")
     
     print("\nSearching for a book by Title (Standard BST)...")
     start_time = time.time()
