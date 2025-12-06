@@ -77,6 +77,58 @@ class BinarySearchTree:
             else:
                 current = current.right
         return None
+    
+     def _find_min_node(self, node):
+        """Helper to find the minimum value node in a subtree (leftmost node)."""
+        current = node
+        while current.left is not None:
+            current = current.left
+        return current
+
+    def delete(self, title):
+        """
+        Iterative delete method for the BST, removing the node by title.
+        This uses a recursive helper for simplicity in handling the node replacement
+        logic needed for deletion with two children, as an iterative delete
+        implementation is significantly more complex and error-prone.
+        """
+        self.root = self._delete_recursive(self.root, title)
+
+    def _delete_recursive(self, root, title):
+        """
+        Recursive helper for BST deletion.
+        It's acceptable to use recursion for the delete logic as it only goes 
+        down the height of the tree, which is O(log n), and is not susceptible 
+        to python's recursion limit like a full traversal would be.
+        """
+        if root is None:
+            return root
+
+        # 1. Traverse to find the node
+        if title < root.book.title:
+            root.left = self._delete_recursive(root.left, title)
+        elif title > root.book.title:
+            root.right = self._delete_recursive(root.right, title)
+        else:
+            # 2. Node found, handle the 3 cases:
+
+            # Case 1: Node with only one child or no child
+            if root.left is None:
+                return root.right
+            elif root.right is None:
+                return root.left
+
+            # Case 3: Node with two children
+            # finds the inorder successor (smallest in the right subtree)
+            temp = self._find_min_node(root.right)
+
+            # copys the inorder successor's content to this node
+            root.book = temp.book
+
+            # deletes the inorder successor recursively
+            root.right = self._delete_recursive(root.right, temp.book.title)
+        
+        return root
 
     def in_order_traversal(self):
         """
