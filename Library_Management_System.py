@@ -78,7 +78,7 @@ class BinarySearchTree:
                 current = current.right
         return None
     
-     def _find_min_node(self, node):
+    def _find_min_node(self, node):
         """Helper to find the minimum value node in a subtree (leftmost node)."""
         current = node
         while current.left is not None:
@@ -175,7 +175,37 @@ class Library:
         except ValueError as e:
             if verbose: print(f"Error adding book: {e}")
             return False
-            
+
+    ## book removal 
+    def remove_book(self, isbn, verbose=True):
+        """Removes a book from the library by its ISBN."""
+        # 1. checks if the book exists in the ISBN map (O(1))
+        book_to_remove = self.books_by_isbn.get(isbn)
+        
+        if not book_to_remove:
+            if verbose: print(f"Error: Book with ISBN {isbn} not found.")
+            return False
+
+        # 2. checks if the book is checked out or has a waitlist
+        if book_to_remove.is_checked_out or book_to_remove.waitlist:
+            if verbose: 
+                print(f"Error: Cannot remove \"{book_to_remove.title}\".")
+                if book_to_remove.is_checked_out:
+                    print("Book is currently checked out.")
+                if book_to_remove.waitlist:
+                    print(f"Book has {len(book_to_remove.waitlist)} users on the waitlist.")
+            return False
+
+        # 3. removed from ISBN dictionary (O(1))
+        del self.books_by_isbn[isbn]
+
+        # 4. removed from Title BST (O(log n) average)
+        self.books_by_title.delete(book_to_remove.title)
+
+        if verbose: print(f"Successfully removed: \"{book_to_remove.title}\" (ISBN: {isbn}).")
+        return True
+    
+    # checkout 
     def checkout_book(self, isbn, user_id):
         """Checks out a book to a user."""
         book = self.books_by_isbn.get(isbn)
