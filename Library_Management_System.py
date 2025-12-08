@@ -77,7 +77,7 @@ class BinarySearchTree:
             else:
                 current = current.right
         return None
-    
+
     def _find_min_node(self, node):
         """Helper to find the minimum value node in a subtree (leftmost node)."""
         current = node
@@ -205,7 +205,7 @@ class Library:
         if verbose: print(f"Successfully removed: \"{book_to_remove.title}\" (ISBN: {isbn}).")
         return True
     
-    # checkout 
+    # checkout       
     def checkout_book(self, isbn, user_id):
         """Checks out a book to a user."""
         book = self.books_by_isbn.get(isbn)
@@ -369,6 +369,73 @@ def run_functional_tests():
     my_library.list_all_books()
     print("Functional Tests Passed!")
 
+# removal test code
+def run_removal_tests():
+    """
+    Test suite to verify the new remove_book functionality.
+    """
+    print("\n     RUNNING BOOK REMOVAL TEST SUITE")
+
+    library = Library(size=10)
+    
+    # setup - add books for testing
+    library.add_book("A1", "Book A", "Author X", verbose=False)
+    library.add_book("B2", "Book B", "Author Y", verbose=False)
+    library.add_book("C3", "Book C", "Author Z", verbose=False)
+    library.checkout_book("B2", "user_temp")
+    library.checkout_book("C3", "user_waitlist")
+
+    # Test Case 1: remove an existing available book
+    print("\n--- 1. Test: Remove an available book (ISBN A1) ---")
+    # verify pre removal existence
+    print("Pre-removal check:")
+    library.find_book_by_isbn("A1") 
+    
+    success = library.remove_book("A1")
+    print(f"Removal successful: {success}")
+    
+    # verify post removal non existence
+    print("Post-removal check (should be 'No book found'):")
+    library.find_book_by_isbn("A1")
+    
+    # Test Case 2: Remove a non existent book
+    print("\n--- 2. Test: Remove a non-existent book (ISBN D4) ---")
+    success = library.remove_book("D4")
+    print(f"Removal successful: {success}")
+
+    # Test Case 3: Attempt to remove a checked-out book (should fail)
+    print("\n--- 3. Test: Attempt to remove a checked-out book (ISBN B2) ---")
+    success = library.remove_book("B2")
+    print(f"Removal successful: {success}")
+    # Verify it still exists
+    library.find_book_by_isbn("B2")
+
+    # Test Case 4: Attempt to remove a book with a waitlist (should fail)
+    print("\n--- 4. Test: Attempt to remove a book with a waitlist (ISBN C3) ---")
+    # C3 is checked out and has a waitlist user from the setup
+    library.return_book("C3") # returned it to test the waitlist only failure case
+    success = library.remove_book("C3")
+    print(f"Removal successful: {success}")
+    # vrify it still exists
+    library.find_book_by_isbn("C3")
+
+    # Test case 5: Final successful removal (after the waitlist cleared)
+    print("\n--- 5. Test: Remove successfully after waitlist is clear (ISBN C3) ---")
+    # waitlist for C3 is now clear, but it is checked out to 'user_waitlist'
+    library.return_book("C3") # this should make it available
+
+    # now attempts the removal again
+    success = library.remove_book("C3")
+    print(f"Removal successful: {success}")
+    # verifys
+    print("Post-removal check (should be 'No book found'):")
+    library.find_book_by_isbn("C3")
+    
+    # final check of the list
+    library.list_all_books()
+    print("Book Removal Tests Passed!")
+
+## scalabilty testing 
 
 def run_scalability_test():
     """
@@ -379,7 +446,7 @@ def run_scalability_test():
     
     num_books = 1000000
     
-    # Initialise a new library (size parameter kept for compatibility)
+    # initialise a new library (size parameter kept for compatibility)
     large_library = Library(size=int(num_books * 1.25))
     
     print(f"--- 1. Testing scalability with {num_books} books ---")
@@ -436,4 +503,5 @@ def run_scalability_test():
 if __name__ == "__main__":
     run_assignment_edge_case_tests()
     run_functional_tests()
+    run_removal_tests() 
     run_scalability_test()
